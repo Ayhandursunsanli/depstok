@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Depo Stok Takip Sistemi{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{% url 'dashboard' %}" class="text-white text-2xl font-bold">Depo Yönetimi</a>
+            <div class="flex space-x-4">
+                <a href="{% url 'dashboard' %}" class="text-gray-300 hover:text-white">Dashboard</a>
+                <a href="{% url 'shelf_visualization' %}" class="text-gray-300 hover:text-white">Raf Görselleştirme</a>
+                <a href="{% url 'parameters' %}" class="text-gray-300 hover:text-white">Parametreler</a>
+                <a href="{% url 'admin:index' %}" class="text-gray-300 hover:text-white">Admin</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto mt-8 p-4">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-3 rounded {% if message.tags == 'success' %}bg-green-200 text-green-800{% elif message.tags == 'error' %}bg-red-200 text-red-800{% else %}bg-blue-200 text-blue-800{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html> 

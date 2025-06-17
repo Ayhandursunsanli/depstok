@@ -1,0 +1,71 @@
+{% extends 'depo/base.html' %}
+
+{% block title %}{{ product.name }} - Detay{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold text-gray-700">Mevcut Stok</h2>
+                <p class="text-2xl font-bold text-gray-900">{{ product.current_stock }} {{ product.quantity_type }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold text-gray-700">Miktar Türü</h2>
+                <p class="text-xl text-gray-900">{{ product.quantity_type }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold text-gray-700">Raf Numarası</h2>
+                <p class="text-xl text-gray-900">{{ product.shelf|default:"Atanmamış" }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold text-gray-700">Minimum Miktar</h2>
+                <p class="text-xl text-gray-900">{{ product.minimum_quantity }} {{ product.quantity_type }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">Hareket Geçmişi</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">İşlem Türü</th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Miktar</th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Departman</th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                        <tr class="{% if transaction.transaction_type == 'Giriş' %}bg-green-50 hover:bg-green-100{% else %}bg-red-50 hover:bg-red-100{% endif %}">
+                            <td class="px-5 py-5 border-b border-gray-200 text-sm">
+                                <span class="{% if transaction.transaction_type == 'Giriş' %}text-green-700 font-semibold{% else %}text-red-700 font-semibold{% endif %}">
+                                    {{ transaction.transaction_type }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 text-sm">
+                                {{ transaction.quantity }} {{ product.quantity_type }}
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 text-sm">
+                                {{ transaction.department_name }}
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 text-sm">
+                                {{ transaction.date|date:"d.m.Y H:i" }}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-5 border-b border-gray-200 text-sm text-center">
+                                Henüz hareket kaydı bulunmuyor.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

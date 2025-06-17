@@ -1,0 +1,89 @@
+{% extends 'depo/base.html' %}
+
+{% block title %}Parametreler - Depo Stok Takip{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Parametreler</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Miktar Türleri -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Miktar Türleri</h2>
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="quantity_type">
+                <div class="mb-4">
+                    {{ quantity_type_form.name }}
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Ekle
+                </button>
+            </form>
+            <ul class="space-y-2">
+                {% for type in quantity_types %}
+                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span>{{ type.name }}</span>
+                </li>
+                {% empty %}
+                <li class="text-gray-500 italic">Henüz miktar türü eklenmemiş.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Raflar -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Raflar</h2>
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="shelf">
+                <div class="mb-4">
+                    {{ shelf_form.name }}
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Ekle
+                </button>
+            </form>
+            <ul class="space-y-2">
+                {% for shelf in shelves %}
+                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span>{{ shelf.name }}</span>
+                </li>
+                {% empty %}
+                <li class="text-gray-500 italic">Henüz raf eklenmemiş.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Departmanlar -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Departmanlar</h2>
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="department">
+                <div class="mb-4">
+                    {{ department_form.name }}
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Ekle
+                </button>
+            </form>
+            <ul class="space-y-2">
+                {% for dept in departments %}
+                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span>{{ dept.name }}</span>
+                </li>
+                {% empty %}
+                <li class="text-gray-500 italic">Henüz departman eklenmemiş.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    <div class="mt-8">
+        <a href="{% url 'dashboard' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Dashboard'a Dön
+        </a>
+    </div>
+</div>
+{% endblock %} 

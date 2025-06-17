@@ -1,0 +1,62 @@
+{% extends 'depo/base.html' %}
+
+{% block title %}Ürün Girişi - Depo Stok Takip{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Ürün Girişi</h1>
+        
+        <form method="post" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.product.id_for_label }}">
+                    {{ form.product.label }}
+                </label>
+                {{ form.product }}
+                {% if form.product.errors %}
+                <p class="text-red-500 text-xs italic mt-1">{{ form.product.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.quantity.id_for_label }}">
+                    {{ form.quantity.label }}
+                </label>
+                {{ form.quantity }}
+                {% if form.quantity.errors %}
+                <p class="text-red-500 text-xs italic mt-1">{{ form.quantity.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.shelf.id_for_label }}">
+                    {{ form.shelf.label }}
+                </label>
+                {{ form.shelf }}
+                {% if form.shelf.errors %}
+                <p class="text-red-500 text-xs italic mt-1">{{ form.shelf.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    Ürün Girişi Yap
+                </button>
+                <a href="{% url 'dashboard' %}" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                    Geri Dön
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

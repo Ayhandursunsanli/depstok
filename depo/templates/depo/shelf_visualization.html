@@ -1,0 +1,36 @@
+{% extends 'depo/base.html' %}
+
+{% block title %}Raf Görselleştirme - Depo Stok Takip{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Raf Görselleştirme</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for shelf in shelf_data %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Raf: {{ shelf.name }}</h2>
+            
+            {% if shelf.products %}
+            <ul class="space-y-2">
+                {% for product in shelf.products %}
+                <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <a href="{% url 'product_detail' product.id %}" class="font-medium text-blue-600 hover:text-blue-800 hover:underline">{{ product.name }}</a>
+                    <span class="text-gray-600">{{ product.quantity }} {{ product.quantity_type }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-gray-500 italic">Bu rafta ürün bulunmuyor.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-8">
+        <a href="{% url 'dashboard' %}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Dashboard'a Dön
+        </a>
+    </div>
+</div>
+{% endblock %} 

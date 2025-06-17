@@ -1,0 +1,302 @@
+{% extends 'depo/base.html' %}
+
+{% block title %}Dashboard - Depo Stok Takip{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">Depo Stok Durumu</h1>
+
+<!-- Product Entry/Exit and Creation Forms -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Ürün Girişi -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-2xl font-semibold mb-4">Ürün Girişi</h2>
+        <form action="{% url 'product_entry' %}" method="post" id="entryForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_product_select" class="block text-gray-700 text-sm font-bold mb-2">Mevcut Ürün Seç:</label>
+                {{ entry_form.product_select }}
+            </div>
+            <div class="mb-4">
+                <label for="id_product_name" class="block text-gray-700 text-sm font-bold mb-2">Yeni Ürün Adı (Seçili değilse):</label>
+                {{ entry_form.product_name }}
+            </div>
+            <div class="mb-4">
+                <label for="id_quantity" class="block text-gray-700 text-sm font-bold mb-2">Giriş Miktarı:</label>
+                {{ entry_form.quantity }}
+            </div>
+            <div class="mb-4">
+                <label for="id_shelf" class="block text-gray-700 text-sm font-bold mb-2">
+                    Raf Numarası <span class="text-red-500">*</span>
+                </label>
+                {{ entry_form.shelf }}
+                <p class="text-sm text-gray-500 mt-1">Lütfen ürünün yerleştirileceği rafı seçin</p>
+            </div>
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" id="entrySubmitBtn">Ürün Girişi Yap</button>
+        </form>
+    </div>
+
+    <!-- Ürün Çıkışı -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-2xl font-semibold mb-4">Ürün Çıkışı</h2>
+        <form action="{% url 'product_exit' %}" method="post" id="exitForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_product" class="block text-gray-700 text-sm font-bold mb-2">Ürün:</label>
+                {{ exit_form.product }}
+            </div>
+            <div class="mb-4">
+                <label for="id_quantity_exit" class="block text-gray-700 text-sm font-bold mb-2">Çıkış Miktarı:</label>
+                {{ exit_form.quantity }}
+            </div>
+            <div class="mb-4">
+                <label for="id_department" class="block text-gray-700 text-sm font-bold mb-2">Departman:</label>
+                {{ exit_form.department }}
+            </div>
+            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" id="exitSubmitBtn">Ürün Çıkışı Yap</button>
+        </form>
+    </div>
+
+    <!-- Ürün Oluştur -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-2xl font-semibold mb-4">Yeni Ürün Oluştur</h2>
+        <form action="{% url 'create_product' %}" method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="id_name" class="block text-gray-700 text-sm font-bold mb-2">Ürün Adı:</label>
+                {{ product_form.name }}
+            </div>
+            <div class="mb-4">
+                <label for="id_quantity_type" class="block text-gray-700 text-sm font-bold mb-2">Miktar Türü:</label>
+                {{ product_form.quantity_type }}
+            </div>
+            <div class="mb-4">
+                <label for="id_minimum_quantity" class="block text-gray-700 text-sm font-bold mb-2">Minimum Miktar:</label>
+                {{ product_form.minimum_quantity }}
+            </div>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Ürün Oluştur</button>
+        </form>
+    </div>
+</div>
+
+<h2 class="text-2xl font-semibold mb-4">Tüm Ürünler</h2>
+
+<!-- Export to Excel Button -->
+<div class="mb-4">
+    <a href="{% url 'export_products_to_excel' %}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block">Tüm Ürünleri Excel'e Aktar</a>
+</div>
+
+<!-- Search and Filter -->
+<div class="bg-white p-6 rounded-lg shadow mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label for="search" class="block text-gray-700 text-sm font-bold mb-2">Ürün Ara:</label>
+            <input type="text" id="search" onkeyup="filterTable()" placeholder="Ürün adı, raf..." class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div>
+            <label for="quantityTypeFilter" class="block text-gray-700 text-sm font-bold mb-2">Miktar Türüne Göre Filtrele:</label>
+            <select id="quantityTypeFilter" onchange="filterTable()" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">Tümü</option>
+                {% for qt in quantity_types %}
+                    <option value="{{ qt.name }}">{{ qt.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="shelfFilter" class="block text-gray-700 text-sm font-bold mb-2">Rafa Göre Filtrele:</label>
+            <select id="shelfFilter" onchange="filterTable()" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">Tümü</option>
+                {% for shelf in shelves %}
+                    <option value="{{ shelf.name }}">{{ shelf.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Product List Table -->
+<div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
+    <table class="min-w-full leading-normal" id="productTable">
+        <thead>
+            <tr>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ürün Adı</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Toplam Giriş</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Toplam Çıkış</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kalan Stok</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Miktar Türü</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Raf Numarası</th>
+                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Minimum Miktar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr class="{% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %}">
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">
+                        <div class="flex items-center">
+                            {% if product.calculated_stock <= product.minimum_quantity %}
+                                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            {% endif %}
+                            <a href="{% url 'product_detail' product.pk %}" class="text-blue-600 hover:text-blue-900">{{ product.name }}</a>
+                        </div>
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">{{ product.total_entry }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">{{ product.total_exit }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">
+                        {% if product.calculated_stock <= product.minimum_quantity %}
+                            <span style="color: red; font-weight: bold;">{{ product.calculated_stock }}</span>
+                        {% else %}
+                            {{ product.calculated_stock }}
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">{{ product.quantity_type }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">{{ product.shelf }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 {% if product.calculated_stock <= product.minimum_quantity %}bg-red-100 hover:bg-red-200{% endif %} text-sm">{{ product.minimum_quantity }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">Henüz hiç ürün yok.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function filterTable() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("search");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("productTable");
+        tr = table.getElementsByTagName("tr");
+        
+        var quantityTypeFilter = document.getElementById("quantityTypeFilter").value.toUpperCase();
+        var shelfFilter = document.getElementById("shelfFilter").value.toUpperCase();
+
+        for (i = 0; i < tr.length; i++) {
+            if (tr[i].getElementsByTagName("th").length > 0) continue; // Skip header row
+
+            var productNameCol = tr[i].getElementsByTagName("td")[0];
+            var quantityTypeCol = tr[i].getElementsByTagName("td")[4];
+            var shelfCol = tr[i].getElementsByTagName("td")[5];
+
+            if (productNameCol && quantityTypeCol && shelfCol) {
+                var productName = productNameCol.textContent || productNameCol.innerText;
+                var quantityType = quantityTypeCol.textContent || quantityTypeCol.innerText;
+                var shelf = shelfCol.textContent || shelfCol.innerText;
+
+                var nameMatch = productName.toUpperCase().indexOf(filter) > -1;
+                var quantityTypeMatch = (quantityTypeFilter === "" || quantityType.toUpperCase().indexOf(quantityTypeFilter) > -1);
+                var shelfMatch = (shelfFilter === "" || shelf.toUpperCase().indexOf(shelfFilter) > -1);
+
+                if (nameMatch && quantityTypeMatch && shelfMatch) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    document.getElementById('id_product_select').addEventListener('change', function() {
+        var selectedProductId = this.value;
+        var productNameInput = document.getElementById('id_product_name');
+        if (selectedProductId) {
+            productNameInput.value = ''; // Clear custom name if a product is selected
+            productNameInput.disabled = true; // Disable custom name input
+        } else {
+            productNameInput.disabled = false; // Enable custom name input if no product is selected
+        }
+    });
+
+    document.getElementById('id_product_name').addEventListener('input', function() {
+        var productName = this.value;
+        var productSelect = document.getElementById('id_product_select');
+        if (productName) {
+            productSelect.value = ''; // Clear selected product if custom name is entered
+            productSelect.disabled = true; // Disable product select
+        } else {
+            productSelect.disabled = false; // Enable product select if custom name is cleared
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var exitProductSelect = document.getElementById('id_product');
+        var exitQuantityInput = document.getElementById('id_quantity'); // This refers to the quantity field of the exit form
+        var exitQuantityLabel = document.querySelector('label[for="id_quantity"]');
+
+        if (exitProductSelect && exitQuantityInput && exitQuantityLabel) {
+            exitProductSelect.addEventListener('change', function() {
+                var productId = this.value;
+                if (productId) {
+                    fetch(`/get_product_stock/?product_id=${productId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.calculated_stock !== undefined) {
+                                exitQuantityLabel.innerText = `Çıkış Miktarı (Mevcut: ${data.calculated_stock} ${data.quantity_type})`;
+                                exitQuantityInput.setAttribute('max', data.calculated_stock);
+                            } else if (data.error) {
+                                console.error('Error fetching product stock:', data.error);
+                                exitQuantityLabel.innerText = 'Çıkış Miktarı';
+                                exitQuantityInput.removeAttribute('max');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            exitQuantityLabel.innerText = 'Çıkış Miktarı';
+                            exitQuantityInput.removeAttribute('max');
+                        });
+                } else {
+                    exitQuantityLabel.innerText = 'Çıkış Miktarı';
+                    exitQuantityInput.removeAttribute('max');
+                }
+            });
+
+            // Initial load to set current stock for the first selected product if any
+            if (exitProductSelect.value) {
+                exitProductSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+
+    // Prevent multiple form submissions
+    document.getElementById('exitForm').addEventListener('submit', function(e) {
+        var submitBtn = document.getElementById('exitSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'İşlem Yapılıyor...';
+    });
+
+    // Form validation for entry form
+    document.getElementById('entryForm').addEventListener('submit', function(e) {
+        var shelf = document.getElementById('id_shelf');
+        var productSelect = document.getElementById('id_product_select');
+        var productName = document.getElementById('id_product_name');
+        var quantity = document.getElementById('id_quantity');
+        
+        if (!shelf.value) {
+            e.preventDefault();
+            alert('Lütfen bir raf numarası seçin!');
+            shelf.focus();
+            return false;
+        }
+        
+        if (!productSelect.value && !productName.value) {
+            e.preventDefault();
+            alert('Lütfen bir ürün seçin veya yeni ürün adı girin!');
+            return false;
+        }
+        
+        if (!quantity.value || quantity.value <= 0) {
+            e.preventDefault();
+            alert('Lütfen geçerli bir giriş miktarı girin!');
+            quantity.focus();
+            return false;
+        }
+
+        // Disable submit button to prevent double submission
+        var submitBtn = document.getElementById('entrySubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'İşlem Yapılıyor...';
+    });
+</script>
+{% endblock %} 
