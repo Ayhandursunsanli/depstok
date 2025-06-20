@@ -3,6 +3,7 @@
 {% block title %}{{ product.name }} - Detay{% endblock %}
 
 {% block content %}
+{% if product %}
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
@@ -68,4 +69,5 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %} 

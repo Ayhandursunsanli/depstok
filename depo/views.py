@@ -2,19 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Value, F, CharField
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Sum, Value, F, CharField, Q
 from django.db.models.functions import Coalesce
-from .models import Product, EntryTransaction, ExitTransaction, QuantityType, Shelf, Department
-from .forms import ProductForm, EntryTransactionForm, ExitTransactionForm, QuantityTypeForm, ShelfForm, DepartmentForm
+from django.http import HttpResponse, JsonResponse
+from .models import Product, QuantityType, Shelf, Department, EntryTransaction, ExitTransaction
+from .forms import (
+    ProductForm,
+    EntryTransactionForm,
+    ExitTransactionForm,
+    QuantityTypeForm,
+    ShelfForm,
+    DepartmentForm,
+)
 from .utils import calculate_product_stock, get_product_stock_details
 import pandas as pd
-from django.http import HttpResponse
-from django.db import transaction
-from django.utils import timezone
-from django.db.models import Q
-from django.core.paginator import Paginator
-from django.http import JsonResponse
-from django.contrib.auth.mixins import LoginRequiredMixin
+from datetime import datetime  # Eksikti, Excel export için gerekli
 
 class DashboardView(LoginRequiredMixin, ListView):
     model = Product
@@ -25,13 +28,15 @@ class DashboardView(LoginRequiredMixin, ListView):
         return Product.objects.annotate(
             total_entry=Coalesce(Sum('entrytransaction__quantity'), Value(0)),
             total_exit=Coalesce(Sum('exittransaction__quantity'), Value(0)),
-            calculated_stock=F('total_entry') - F('total_exit')
+            stock_calc=F('total_entry') - F('total_exit')  # isim değişti!
         ).order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['total_products'] = Product.objects.count()
-        context['total_stock'] = sum(product.calculated_stock for product in self.get_queryset())
+        queryset = list(self.get_queryset())
+        context['total_products'] = len(queryset)
+        context['total_stock'] = sum(p.stock_calc for p in queryset)
+        context['products'] = queryset
         context['entry_form'] = EntryTransactionForm()
         context['exit_form'] = ExitTransactionForm()
         context['product_form'] = ProductForm()
@@ -47,42 +52,44 @@ class ProductDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
-        
+
         # Giriş işlemleri
         entry_transactions = EntryTransaction.objects.filter(product=product).annotate(
-            transaction_type=Value('Giriş', output_field=CharField())
-        ).values('entry_date', 'quantity', 'transaction_type')
-        
+            transaction_type=Value('Giriş', output_field=CharField()),
+            department_name=Value('Depo', output_field=CharField())  # Giriş işlemleri için sabit
+        ).values('entry_date', 'quantity', 'transaction_type', 'department_name')
+
         # Çıkış işlemleri
         exit_transactions = ExitTransaction.objects.filter(product=product).annotate(
-            transaction_type=Value('Çıkış', output_field=CharField())
-        ).values('exit_date', 'quantity', 'transaction_type')
-        
-        # Tüm işlemleri birleştir ve tarihe göre sırala
+            transaction_type=Value('Çıkış', output_field=CharField()),
+            department_name=F('department__name')
+        ).values('exit_date', 'quantity', 'transaction_type', 'department_name')
+
+        # Tüm işlemleri birleştir ve sırala
         all_transactions = []
-        
-        # Giriş işlemlerini ekle
+
         for entry in entry_transactions:
             all_transactions.append({
                 'date': entry['entry_date'],
                 'quantity': entry['quantity'],
-                'transaction_type': entry['transaction_type']
+                'transaction_type': entry['transaction_type'],
+                'department_name': entry['department_name']
             })
-        
-        # Çıkış işlemlerini ekle
+
         for exit in exit_transactions:
             all_transactions.append({
                 'date': exit['exit_date'],
                 'quantity': exit['quantity'],
-                'transaction_type': exit['transaction_type']
+                'transaction_type': exit['transaction_type'],
+                'department_name': exit['department_name'] or 'Bilinmiyor'
             })
-        
-        # Tarihe göre sırala
+
         all_transactions.sort(key=lambda x: x['date'], reverse=True)
-        
+
         context['transactions'] = all_transactions
-        context['current_stock'] = calculate_product_stock(product)
+        context['current_stock'] = product.calculated_stock  # Burada artık property kullanıyoruz
         return context
+
 
 def create_product(request):
     if request.method == 'POST':
@@ -126,23 +133,27 @@ def product_entry(request):
         form = EntryTransactionForm()
     return render(request, 'depo/product_entry.html', {'form': form})
 
+@login_required
 def product_exit(request):
     if request.method == 'POST':
         form = ExitTransactionForm(request.POST)
         if form.is_valid():
             product = form.cleaned_data['product']
             quantity = form.cleaned_data['quantity']
-            
-            current_stock = calculate_product_stock(product)
+
+            current_stock = product.calculated_stock  # sadece oku
+
             if quantity > current_stock:
                 messages.error(request, 'Yetersiz stok!')
                 return redirect('dashboard')
-            
+
             exit = form.save()
-            product.calculated_stock = calculate_product_stock(product)
+
+            # stok sıfırsa rafı temizle
             if product.calculated_stock == 0:
                 product.shelf = None
-            product.save()
+                product.save()
+
             messages.success(request, 'Ürün çıkışı başarıyla kaydedildi.')
             return redirect('dashboard')
     else:

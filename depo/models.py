@@ -1,5 +1,7 @@
 from django.db import models
 from django.urls import reverse
+from django.db.models.functions import Coalesce
+from django.db.models import Sum, Value
 
 # Create your models here.
 
@@ -43,11 +45,23 @@ class Product(models.Model):
         verbose_name = "Ürün"
         verbose_name_plural = "Ürünler"
 
+        
+
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
         return reverse("product_detail", kwargs={"pk": self.pk})
+    
+    @property
+    def calculated_stock(self):
+        total_entry = self.entrytransaction_set.aggregate(
+            total=Coalesce(Sum('quantity'), Value(0))
+        )['total']
+        total_exit = self.exittransaction_set.aggregate(
+            total=Coalesce(Sum('quantity'), Value(0))
+        )['total']
+        return total_entry - total_exit
 
 class EntryTransaction(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Ürün")
